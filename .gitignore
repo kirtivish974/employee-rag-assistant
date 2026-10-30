@@ -1,0 +1,36 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# API keys and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Original handbook and local datasets
+handbook/
+datasets/
+evaluation_data.json
+evaluation_dataset.json
+
+# Local experiments and temporary scripts
+clear_index.py
+clean-clean-index.py
+tempp.py

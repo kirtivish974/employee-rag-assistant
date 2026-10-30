@@ -1,0 +1,22 @@
+question,faithfulness,answer_relevancy,context_precision,context_recall
+What is the normal workweek for a full-time employee?,1.0,0.9999999999999002,0.9999999999666667,1.0
+How much notice should an employee give when resigning?,1.0,0.8596753063255828,0.99999999995,1.0
+Do employees need to justify their paid time off?,1.0,0.9999999999999991,0.99999999995,1.0
+Are adopted children covered by the maternity and paternity leave policy?,1.0,0.9999999999999991,0.9999999999,1.0
+Does CivicActions pay the full insurance premium for eligible employees?,1.0,0.9304558391175286,0.9999999999,1.0
+Does CivicActions support employees who want to take professional training or education courses?,1.0,0.999999999999921,0.999999999975,1.0
+What maternity and paternity leave benefits does the handbook describe?,1.0,0.8927417765753579,0.9999999999,1.0
+Who is the current HR director as of October 2026?,1.0,0.0,0.0,1.0
+How do employees request paid time off?,1.0,0.941767375848184,0.9999999999,1.0
+When does medical insurance coverage begin for a new full-time employee?,1.0,0.9864526793626597,0.9999999999,1.0
+What are the leave policies here?,1.0,0.6778682743571546,0.8055555555287036,0.6666666666666666
+How should an employee report an unexpected absence due to illness or an emergency?,1.0,0.9747957215960028,0.9999999999666667,1.0
+What should an employee do with company property when leaving the company?,1.0,0.7101346892352712,0.7499999999625,1.0
+"Which employees are eligible for medical, dental, vision, and life insurance benefits?",1.0,0.9678433860137655,0.7499999999625,1.0
+"How long is a typical personal leave of absence, and is it paid?",1.0,0.8261351801517517,0.9999999999,1.0
+Who is eligible to request a personal leave of absence?,1.0,0.7941128617749037,0.9999999999,1.0
+Does a short appointment of less than half a day require a formal PTO request?,1.0,0.9999999999998721,0.9999999999,1.0
+How can an employee raise a workplace complaint that cannot be resolved informally?,0.8888888888888888,0.9509611658678101,0.9999999999666667,1.0
+What is my current remaining PTO balance?,0.5,0.9568247947518062,0.7555555555303703,1.0
+Can employees work outside jobs or pursue personal education outside working hours?,1.0,0.8901205634825987,0.9999999999,1.0
+Does the handbook say employees accrue sick days or vacation days?,1.0,0.9999999999999994,0.9999999999,1.0
