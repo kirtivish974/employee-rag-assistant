@@ -483,22 +483,23 @@ if selected_source:
         f"**Citation: [{selected_source['id']}]**"
     )
 
-    st.caption(selected_source["source"])
+    st.caption(selected_source.get("source", "Unknown source"))
 
     st.markdown("#### Retrieved document passage")
 
-    st.markdown(
-        selected_source.get(
-            "content",
-            "Source content is unavailable."
+    source_content = selected_source.get("content", "")
+
+    if source_content and source_content.strip():
+        st.markdown(source_content)
+    else:
+        st.warning(
+            "The retrieved passage is unavailable for this citation. "
+            "Please try asking the question again."
         )
-    )
 
     if st.button("Close source viewer", key="close_source"):
-
         st.session_state.selected_source = None
         st.rerun()
-
 
 # ==========================================
 # 10. CHAT INPUT
@@ -551,33 +552,36 @@ if user_input:
                 for msg in previous_messages
             )
 
-            sources_holder = []
-
-            def stream_rag_answer():
-
-                for chunk in rag_chain.stream({
-                    "question": user_input,
-                    "chat_history": chat_history
-                }):
-
-                    if not isinstance(chunk, dict):
-                        continue
-
-                    if chunk.get("sources"):
-                        sources_holder[:] = chunk["sources"]
-
-                    answer_chunk = chunk.get("answer", "")
-
-                    if isinstance(answer_chunk, str) and answer_chunk:
-                        yield answer_chunk
-
             try:
 
                 with st.spinner("Searching the handbook..."):
 
-                    answer = st.write_stream(stream_rag_answer())
+                    # Get the complete answer and sources together
+                    result = rag_chain.invoke({
+                        "question": user_input,
+                        "chat_history": chat_history
+                    })
 
-                sources = sources_holder
+                answer = result.get("answer", "")
+
+                # Retrieve complete citation metadata
+                sources = result.get("sources", [])
+
+                # Validate source data
+                sources = [
+                    source for source in sources
+                    if isinstance(source, dict)
+                    and source.get("id")
+                    and source.get("source")
+                ]
+
+                if not answer:
+                    answer = (
+                        "I could not generate an answer. "
+                        "Please try asking your question again."
+                    )
+
+                st.markdown(answer)
 
             except Exception as e:
 
@@ -592,6 +596,7 @@ if user_input:
 
                 print(f"RAG pipeline error: {e}")
 
+    # Save the complete response and source metadata
     st.session_state.message_history.append({
         "role": "assistant",
         "content": answer,
@@ -599,7 +604,6 @@ if user_input:
     })
 
     st.rerun()
-
 
 # ==========================================
 # 12. FOOTER
