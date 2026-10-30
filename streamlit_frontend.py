@@ -1,8 +1,8 @@
+
 import streamlit as st
-from main import rag_chain
 import re
-import streamlit as st
 from main import rag_chain
+
 
 # ==========================================
 # 1. PAGE CONFIGURATION
@@ -23,8 +23,6 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* ---------- Main application ---------- */
-
 .stApp {
     background-color: #F5F7FB;
     color: #172B4D;
@@ -40,26 +38,19 @@ st.markdown("""
     padding-bottom: 5rem;
 }
 
-/* Hide Streamlit branding */
-
 #MainMenu,
 footer {
     visibility: hidden;
 }
-
-/* Explicit default text colors */
 
 .stApp h1,
 .stApp h2,
 .stApp h3,
 .stApp h4,
 .stApp p,
-.stApp label,
-.stApp [data-testid="stMarkdownContainer"] {
+.stApp label {
     color: #172B4D;
 }
-
-/* ---------- Header ---------- */
 
 .main-header {
     background: linear-gradient(120deg, #101D3A, #183F70);
@@ -94,8 +85,6 @@ footer {
     margin-bottom: 12px;
 }
 
-/* ---------- Welcome card ---------- */
-
 .welcome-card {
     background: #FFFFFF;
     border: 1px solid #E5EAF2;
@@ -116,8 +105,6 @@ footer {
     line-height: 1.6;
 }
 
-/* ---------- Chat messages ---------- */
-
 .stChatMessage {
     background-color: #FFFFFF !important;
     border: 1px solid #E7ECF3;
@@ -130,8 +117,6 @@ footer {
 .stChatMessage [data-testid="stMarkdownContainer"] p {
     color: #26364D !important;
 }
-
-/* ---------- Chat input ---------- */
 
 [data-testid="stChatInput"] {
     background-color: #FFFFFF !important;
@@ -149,8 +134,6 @@ footer {
     color: #8996A8 !important;
     -webkit-text-fill-color: #8996A8 !important;
 }
-
-/* ---------- Sidebar ---------- */
 
 section[data-testid="stSidebar"] {
     background-color: #101D32;
@@ -173,15 +156,11 @@ section[data-testid="stSidebar"] * {
     line-height: 1.6;
 }
 
-/* ---------- Source expander ---------- */
-
 div[data-testid="stExpander"] {
     background-color: #F8FAFD;
     border: 1px solid #E1E8F0;
     border-radius: 12px;
 }
-
-/* ---------- Buttons ---------- */
 
 div.stButton > button {
     border-radius: 10px;
@@ -198,8 +177,6 @@ div.stButton > button:hover {
     background-color: #F0F6FF;
 }
 
-/* ---------- Footer ---------- */
-
 .app-footer {
     text-align: center;
     color: #8996A8 !important;
@@ -210,8 +187,6 @@ div.stButton > button:hover {
 .app-footer p {
     color: #8996A8 !important;
 }
-
-/* ---------- Responsive ---------- */
 
 @media (max-width: 768px) {
     .main-header {
@@ -238,15 +213,117 @@ div.stButton > button:hover {
 if "message_history" not in st.session_state:
     st.session_state.message_history = []
 
-# Separate state for suggested questions.
-# Do not use the same key as st.chat_input.
-
 if "pending_prompt" not in st.session_state:
     st.session_state.pending_prompt = None
 
+if "selected_source" not in st.session_state:
+    st.session_state.selected_source = None
+
 
 # ==========================================
-# 4. SIDEBAR
+# 4. HELPER FUNCTIONS
+# ==========================================
+
+def get_simple_response(message):
+
+    message = message.lower().strip().rstrip("!.,?")
+
+    greetings = {
+        "hi", "hii", "hiii",
+        "hello", "hey", "heyy",
+        "good morning",
+        "good afternoon",
+        "good evening"
+    }
+
+    if message in greetings:
+        return (
+            "Hello! I'm your CivicActions Handbook Assistant. "
+            "You can ask me about employee policies, benefits, "
+            "paid time off, leaves, and workplace guidelines."
+        )
+
+    introduction = re.fullmatch(
+        r"(?:hey|hi|hello)?\s*,?\s*(?:i am|i'm|my name is)\s+([a-z][a-z'-]*)",
+        message
+    )
+
+    if introduction:
+        name = introduction.group(1).capitalize()
+
+        return (
+            f"Hey, {name}! Nice to meet you. "
+            "I'm your CivicActions Handbook Assistant. "
+            "Feel free to ask me anything about employee policies "
+            "or benefits."
+        )
+
+    if message in {"how are you", "how are you doing"}:
+        return (
+            "I'm doing well! What would you like to know "
+            "about the CivicActions handbook?"
+        )
+
+    if message in {"thanks", "thank you", "thankyou", "thx"}:
+        return (
+            "You're welcome! Let me know if you have "
+            "another handbook question."
+        )
+
+    if message in {"bye", "goodbye", "see you"}:
+        return (
+            "Goodbye! Feel free to return whenever "
+            "you have a handbook question."
+        )
+
+    return None
+
+
+def render_sources(sources, message_id):
+
+    if not sources:
+        return
+
+    st.markdown("**Verify this answer:**")
+
+    columns = st.columns(min(len(sources), 5))
+
+    for index, source in enumerate(sources):
+
+        with columns[index % len(columns)]:
+
+            if st.button(
+                f"📄 [{source['id']}]",
+                key=f"{message_id}_{source['id']}",
+                help=f"Open source: {source['source']}"
+            ):
+
+                st.session_state.selected_source = {
+                    **source,
+                    "message_id": message_id
+                }
+
+    with st.expander(f"📎 View sources ({len(sources)})"):
+
+        for source in sources:
+
+            st.markdown(
+                f"**[{source['id']}]** `{source['source']}`"
+            )
+
+            if st.button(
+                f"Open [{source['id']}]",
+                key=f"open_{message_id}_{source['id']}"
+            ):
+
+                st.session_state.selected_source = {
+                    **source,
+                    "message_id": message_id
+                }
+
+
+# ==========================================
+# 5. SIDEBAR
 # ==========================================
 
 with st.sidebar:
@@ -299,8 +376,10 @@ with st.sidebar:
     )
 
     if st.button("🗑️ Clear conversation", use_container_width=True):
+
         st.session_state.message_history = []
         st.session_state.pending_prompt = None
+        st.session_state.selected_source = None
         st.rerun()
 
     st.divider()
@@ -309,7 +388,7 @@ with st.sidebar:
 
 
 # ==========================================
-# 5. MAIN HEADER
+# 6. MAIN HEADER
 # ==========================================
 
 st.markdown("""
@@ -325,80 +404,21 @@ st.markdown("""
 
 
 # ==========================================
-# 6. GREETING HANDLER
-# ==========================================
-
-def get_simple_response(message):
-
-    message = message.lower().strip().rstrip("!.,?")
-
-    greetings = {
-        "hi", "hii", "hiii",
-        "hello", "hey", "heyy",
-        "good morning",
-        "good afternoon",
-        "good evening"
-    }
-
-    if message in greetings:
-        return (
-            "Hello! I'm your CivicActions Handbook Assistant. "
-            "You can ask me about employee policies, benefits, "
-            "paid time off, leaves, and workplace guidelines."
-        )
-
-    # Handle user introductions
-    introduction = re.fullmatch(
-        r"(?:hey|hi|hello)?\s*,?\s*(?:i am|i'm|my name is)\s+([a-z][a-z'-]*)",
-        message
-    )
-
-    if introduction:
-        name = introduction.group(1).capitalize()
-
-        return (
-            f"Hey, {name}! Nice to meet you. "
-            "I'm your CivicActions Handbook Assistant. "
-            "Feel free to ask me anything about employee policies "
-            "or benefits."
-        )
-
-    if message in {"how are you", "how are you doing"}:
-        return (
-            "I'm doing well! What would you like to know "
-            "about the CivicActions handbook?"
-        )
-
-    if message in {"thanks", "thank you", "thankyou", "thx"}:
-        return (
-            "You're welcome! Let me know if you have "
-            "another handbook question."
-        )
-
-    if message in {"bye", "goodbye", "see you"}:
-        return (
-            "Goodbye! Feel free to return whenever "
-            "you have a handbook question."
-        )
-
-    return None
-
-# ==========================================
 # 7. WELCOME SCREEN
 # ==========================================
 
 if not st.session_state.message_history:
 
     st.markdown("""
-<div class="welcome-card">
-    <h3>👋 Welcome to your handbook assistant</h3>
-    <p>
-        Need help understanding an employee policy?
-        Ask a question in natural language. I'll search
-        the handbook and provide an answer with source references.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+    <div class="welcome-card">
+        <h3>👋 Welcome to your handbook assistant</h3>
+        <p>
+            Need help understanding an employee policy?
+            Ask a question in natural language. I'll search
+            the handbook and provide an answer with source references.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("#### Try asking something")
 
@@ -422,6 +442,7 @@ if not st.session_state.message_history:
                 key=f"suggestion_{index}",
                 use_container_width=True
             ):
+
                 st.session_state.pending_prompt = suggestion
                 st.rerun()
 
@@ -430,7 +451,7 @@ if not st.session_state.message_history:
 # 8. DISPLAY CHAT HISTORY
 # ==========================================
 
-for message in st.session_state.message_history:
+for index, message in enumerate(st.session_state.message_history):
 
     avatar = "🧑" if message["role"] == "user" else "📚"
 
@@ -440,36 +461,61 @@ for message in st.session_state.message_history:
 
         if message["role"] == "assistant" and message.get("sources"):
 
-            with st.expander(
-                f"📎 View sources ({len(message['sources'])})"
-            ):
-
-                for source in message["sources"]:
-                    st.markdown(
-                        f"**[{source['id']}]** `{source['source']}`"
-                    )
+            render_sources(
+                message["sources"],
+                f"history_{index}"
+            )
 
 
 # ==========================================
-# 9. CHAT INPUT
+# 9. SOURCE VIEWER
+# ==========================================
+
+selected_source = st.session_state.selected_source
+
+if selected_source:
+
+    st.divider()
+
+    st.markdown("### 📖 Source document")
+
+    st.markdown(
+        f"**Citation: [{selected_source['id']}]**"
+    )
+
+    st.caption(selected_source["source"])
+
+    st.markdown("#### Retrieved document passage")
+
+    st.markdown(
+        selected_source.get(
+            "content",
+            "Source content is unavailable."
+        )
+    )
+
+    if st.button("Close source viewer", key="close_source"):
+
+        st.session_state.selected_source = None
+        st.rerun()
+
+
+# ==========================================
+# 10. CHAT INPUT
 # ==========================================
 
 typed_input = st.chat_input(
     "Ask anything about employee policies..."
 )
 
-# A suggested question takes priority over typed input.
-
 user_input = st.session_state.pending_prompt or typed_input
-
-# Clear the suggestion after retrieving it.
 
 if st.session_state.pending_prompt:
     st.session_state.pending_prompt = None
 
 
 # ==========================================
-# 10. PROCESS USER QUERY
+# 11. PROCESS USER QUERY
 # ==========================================
 
 if user_input:
@@ -495,8 +541,6 @@ if user_input:
 
         else:
 
-                        # Prepare conversation history
-
             previous_messages = (
                 st.session_state.message_history[-7:-1]
             )
@@ -509,8 +553,6 @@ if user_input:
 
             sources_holder = []
 
-            # Stream the RAG response
-
             def stream_rag_answer():
 
                 for chunk in rag_chain.stream({
@@ -521,11 +563,9 @@ if user_input:
                     if not isinstance(chunk, dict):
                         continue
 
-                    # Capture sources from the initial chain output
                     if chunk.get("sources"):
                         sources_holder[:] = chunk["sources"]
 
-                    # Stream only the generated answer
                     answer_chunk = chunk.get("answer", "")
 
                     if isinstance(answer_chunk, str) and answer_chunk:
@@ -538,19 +578,6 @@ if user_input:
                     answer = st.write_stream(stream_rag_answer())
 
                 sources = sources_holder
-
-                if sources:
-
-                    with st.expander(
-                        f"📎 View sources ({len(sources)})"
-                    ):
-
-                        for source in sources:
-
-                            st.markdown(
-                                f"**[{source['id']}]** "
-                                f"`{source['source']}`"
-                            )
 
             except Exception as e:
 
@@ -571,9 +598,11 @@ if user_input:
         "sources": sources
     })
 
+    st.rerun()
+
 
 # ==========================================
-# 11. FOOTER
+# 12. FOOTER
 # ==========================================
 
 st.markdown("""

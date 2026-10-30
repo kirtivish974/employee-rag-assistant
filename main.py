@@ -33,7 +33,8 @@ def prepare_context(inputs):
 
         sources.append({
             "id": source_id,
-            "source": source_path
+            "source": source_path,
+            "content": doc.page_content
         })
 
     context = "\n\n".join(context_parts)
